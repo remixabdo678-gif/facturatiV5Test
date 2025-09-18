@@ -239,7 +239,6 @@ export default function Template2Modern({ data, type, includeSignature = false }
         </p>
       </div>
       </div>
-        </div>
-      </div>
+    
   );
 }
