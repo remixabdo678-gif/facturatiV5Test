@@ -68,7 +68,7 @@ export default function InvoiceViewer({ invoice, onClose, onEdit, onDownload, on
     }
 
     const options = {
-      margin: [5, 5, 5, 5],
+      margin: [0, 0, 0, 0],
       filename: `Facture_${invoice.number}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: {
@@ -78,18 +78,33 @@ export default function InvoiceViewer({ invoice, onClose, onEdit, onDownload, on
         logging: false,
         backgroundColor: '#ffffff',
         width: 794,
-        height: 1124
+        height: 1123,
+        scrollX: 0,
+        scrollY: 0
       },
       jsPDF: {
         unit: 'mm',
         format: 'a4',
-        orientation: 'portrait'
+        orientation: 'portrait',
+        putOnlyUsedFonts: true,
+        floatPrecision: 16
       }
     };
 
     html2pdf()
       .set(options)
       .from(invoiceContent)
+      .toPdf()
+      .get('pdf')
+      .then((pdf: any) => {
+        // Améliorer la qualité du PDF
+        pdf.setProperties({
+          title: `Facture ${invoice.number}`,
+          subject: 'Facture générée par Facturati',
+          author: user?.company?.name || 'Facturati',
+          creator: 'Facturati ERP'
+        });
+      })
       .save()
       .catch((error) => {
         console.error('Erreur lors de la génération du PDF:', error);

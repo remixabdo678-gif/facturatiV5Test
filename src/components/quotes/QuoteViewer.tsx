@@ -67,7 +67,7 @@ export default function QuoteViewer({ quote, onClose, onEdit, onDownload, onUpgr
       return;
     }
     const options = {
-      margin: [5, 5, 5, 5],
+      margin: [0, 0, 0, 0],
       filename: `Devis_${quote.number}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: {
@@ -76,19 +76,34 @@ export default function QuoteViewer({ quote, onClose, onEdit, onDownload, onUpgr
         allowTaint: false,
         logging: false,
         backgroundColor: '#ffffff',
-         width: 794,
-        height: 1135
+        width: 794,
+        height: 1123,
+        scrollX: 0,
+        scrollY: 0
       },
       jsPDF: {
         unit: 'mm',
         format: 'a4',
-        orientation: 'portrait'
+        orientation: 'portrait',
+        putOnlyUsedFonts: true,
+        floatPrecision: 16
       }
     };
 
     html2pdf()
       .set(options)
       .from(quoteContent)
+      .toPdf()
+      .get('pdf')
+      .then((pdf: any) => {
+        // Améliorer la qualité du PDF
+        pdf.setProperties({
+          title: `Devis ${quote.number}`,
+          subject: 'Devis généré par Facturati',
+          author: user?.company?.name || 'Facturati',
+          creator: 'Facturati ERP'
+        });
+      })
       .save()
       .catch((error) => {
         console.error('Erreur lors de la génération du PDF:', error);

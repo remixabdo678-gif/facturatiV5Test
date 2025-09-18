@@ -11,51 +11,104 @@ interface TemplateProps {
 export default function Template4Corporate({ data, type, includeSignature = false }: TemplateProps) {
   const { user } = useAuth();
 
-  // Fonction pour récupérer l'unité d'un produit
-  const getProductUnit = (productName: string) => {
-    return 'unité';
-  };
-
   return (
-    <div
-      className="bg-white mx-auto shadow-lg rounded overflow-hidden flex flex-col"
-      style={{
-    fontFamily: 'Arial, sans-serif',
-    width: '100%',        // prend toute la largeur définie par le wrapper
-    maxWidth: '750px',    // largeur A4
-    height: '1100px',     // hauteur A4
-    display: 'flex',
-  }}
-    >
-      {/* CONTENU PRINCIPAL */}
-      <div className="flex-1 flex flex-col">
-        {/* HEADER */}
-        <div className="relative bg-[#24445C] text-white px-8 py-6">
+    <>
+      {/* Styles CSS pour la pagination PDF */}
+      <style>{`
+        @page {
+          size: A4;
+          margin: 0;
+          @top-center {
+            content: element(header);
+          }
+          @bottom-center {
+            content: element(footer);
+          }
+        }
+        
+        @media print {
+          .pdf-header {
+            position: running(header);
+            page-break-inside: avoid;
+          }
+          
+          .pdf-footer {
+            position: running(footer);
+            page-break-inside: avoid;
+          }
+          
+          .pdf-content {
+            margin-top: 220px;
+            margin-bottom: 140px;
+          }
+          
+          .pdf-table {
+            page-break-inside: auto;
+          }
+          
+          .pdf-table tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+          }
+          
+          .pdf-table thead {
+            display: table-header-group;
+          }
+          
+          .pdf-signature {
+            page-break-before: avoid;
+            page-break-inside: avoid;
+          }
+          
+          .pdf-totals {
+            page-break-before: avoid;
+            page-break-inside: avoid;
+          }
+          
+          .wave-decoration {
+            display: none !important;
+          }
+        }
+        
+        .template-container {
+          font-family: Arial, sans-serif;
+          width: 100%;
+          max-width: 750px;
+          min-height: 1100px;
+          background: white;
+          display: flex;
+          flex-direction: column;
+        }
+      `}</style>
+
+      <div className="template-container">
+        {/* HEADER - Sera répété sur chaque page en PDF */}
+        <div className="pdf-header relative bg-blue-800 text-white p-6">
           <div className="flex items-center justify-between">
             {user?.company.logo && (
               <img
                 src={user.company.logo}
                 alt="Logo"
-                className="mx-auto"
-                style={{ height: '140px', width: '140px' }}
+                className="h-20 w-auto"
               />
             )}
-
             <div className="flex-1 text-center">
-              <h1 className="text-4xl font-extrabold uppercase tracking-wide">
+              <h1 className="text-2xl font-extrabold uppercase tracking-wide">
                 {user?.company.name}
               </h1>
-              <h2 className="text-3xl font-semibold mt-5 tracking-widest">
+              <h2 className="text-xl font-semibold mt-2 tracking-widest">
                 {type === 'invoice' ? 'FACTURE' : 'DEVIS'}
               </h2>
             </div>
-
-            <div className="w-20" />
+            <div className="text-right text-sm">
+              <p><strong>N°:</strong> {data.number}</p>
+              <p><strong>Date:</strong> {new Date(data.date).toLocaleDateString('fr-FR')}</p>
+            </div>
           </div>
 
-          {/* Vague blanche en bas */}
+          {/* Vague blanche en bas - masquée en PDF */}
           <svg
-            className="absolute bottom-0 left-0 w-full h-10"
+            className="wave-decoration absolute bottom-0 left-0 w-full h-8"
             viewBox="0 0 1440 120"
             preserveAspectRatio="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -67,146 +120,148 @@ export default function Template4Corporate({ data, type, includeSignature = fals
           </svg>
         </div>
 
-        {/* CLIENT + DATES */}
-        <div className="p-8 border-b border-[#24445C]">
-          <div className="grid grid-cols-2 gap-8">
-            <div className="bg-gray-50 p-6 rounded border border-[#24445C]">
-              <h3 className="font-bold text-sm text-[#24445C] mb-3 border-b border-[#24445C] pb-2 text-center">
-                CLIENT : {data.client.name} {data.client.address}
-              </h3>
-              <div className="text-sm text-black space-y-1 text-center">
-                <p>
-                  <strong>ICE:</strong> {data.client.ice}
-                </p>
+        {/* CONTENU PRINCIPAL */}
+        <div className="pdf-content flex-1">
+          {/* CLIENT + DATES */}
+          <div className="p-6 border-b border-blue-800">
+            <div className="grid grid-cols-2 gap-6">
+              <div className="bg-gray-50 p-4 rounded border border-blue-800">
+                <h3 className="font-bold text-sm text-blue-800 mb-3 border-b border-blue-800 pb-2 text-center">
+                  CLIENT : {data.client.name}
+                </h3>
+                <div className="text-sm text-black space-y-1 text-center">
+                  <p>{data.client.address}</p>
+                  <p><strong>ICE:</strong> {data.client.ice}</p>
+                  <p><strong>Tél:</strong> {data.client.phone}</p>
+                  <p><strong>Email:</strong> {data.client.email}</p>
+                </div>
               </div>
-            </div>
 
-            <div className="bg-gray-50 p-6 rounded border border-[#24445C]">
-              <h3 className="font-bold text-sm text-[#24445C] mb-3 border-b border-[#24445C] pb-2 text-center">
-                DATE : {new Date(data.date).toLocaleDateString('fr-FR')}
-              </h3>
-              <div className="text-sm text-black space-y-1 text-center">
-                <p>
-                  <strong>{type === 'invoice' ? 'FACTURE' : 'DEVIS'} N° :</strong> {data.number}
-                </p>
+              <div className="bg-gray-50 p-4 rounded border border-blue-800">
+                <h3 className="font-bold text-sm text-blue-800 mb-3 border-b border-blue-800 pb-2 text-center">
+                  INFORMATIONS
+                </h3>
+                <div className="text-sm text-black space-y-1 text-center">
+                  <p><strong>{type === 'invoice' ? 'FACTURE' : 'DEVIS'} N°:</strong> {data.number}</p>
+                  <p><strong>Date:</strong> {new Date(data.date).toLocaleDateString('fr-FR')}</p>
+                  {type === 'quote' && 'validUntil' in data && (
+                    <p><strong>Valide jusqu'au:</strong> {new Date(data.validUntil).toLocaleDateString('fr-FR')}</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* TABLE PRODUITS */}
-        <div className="p-8 border-b border-[#24445C]">
-          <table className="w-full border border-[#24445C] rounded">
-            <thead className="bg-[#24445C] text-white text-sm">
-              <tr>
-                <th className="px-4 py-2 text-center">Description</th>
-                <th className="px-4 py-2 text-center">Quantité</th>
-                <th className="px-4 py-2 text-center">Prix Unitaire</th>
-                <th className="px-4 py-2 text-center">Total HT</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.items.map((item, index) => (
-                <tr key={index} className="border-t border-[#24445C]">
-                  <td className="px-4 py-2 text-center text-sm">{item.description}</td>
-                  <td className="px-4 py-2 text-center text-sm">
-                    {item.quantity.toFixed(3)} ({item.unit || 'unité'})
-                  </td>
-                  <td className="px-4 py-2 text-center text-sm">{item.unitPrice.toFixed(2)} MAD</td>
-                  <td className="px-4 py-2 text-center text-sm font-semibold">
-                    {item.total.toFixed(2)} MAD
-                  </td>
+          {/* TABLE PRODUITS - Avec pagination automatique */}
+          <div className="p-6">
+            <table className="pdf-table w-full border-collapse border border-blue-800">
+              <thead className="bg-blue-800 text-white">
+                <tr>
+                  <th className="border border-white px-3 py-2 text-center font-bold text-sm">DÉSIGNATION</th>
+                  <th className="border border-white px-3 py-2 text-center font-bold text-sm">QUANTITÉ</th>
+                  <th className="border border-white px-3 py-2 text-center font-bold text-sm">P.U. HT</th>
+                  <th className="border border-white px-3 py-2 text-center font-bold text-sm">TOTAL HT</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {data.items.map((item, index) => (
+                  <tr key={index}>
+                    <td className="border border-blue-800 px-3 py-2 text-center text-sm">{item.description}</td>
+                    <td className="border border-blue-800 px-3 py-2 text-center text-sm">
+                      {item.quantity.toFixed(3)} {item.unit || 'unité'}
+                    </td>
+                    <td className="border border-blue-800 px-3 py-2 text-center text-sm">
+                      {item.unitPrice.toFixed(2)} MAD
+                    </td>
+                    <td className="border border-blue-800 px-3 py-2 text-center font-medium text-sm">
+                      {item.total.toFixed(2)} MAD
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        {/* TOTALS */}
-        <div className="p-8">
-          <div className="flex justify-between">
-            <div className="w-80 bg-gray-50 rounded border border-[#24445C] p-4">
-              <div className="text-sm font-bold pt-3 text-center text-[#24445C] pb-4">
-                <p>Arrêtée le présent {type === 'invoice' ? 'facture' : 'devis'} à la somme de :</p>
+          {/* TOTAUX - Éviter la coupure */}
+          <div className="pdf-totals p-6">
+            <div className="flex justify-between">
+              {/* Bloc gauche */}
+              <div className="w-80 bg-gray-50 rounded border border-blue-800 p-4">
+                <div className="text-sm font-bold text-center text-blue-800 pb-2">
+                  <p>Arrêtée la présente {type === 'invoice' ? 'facture' : 'devis'} à la somme de :</p>
+                </div>
+                <div className="border-t border-blue-800 pt-2">
+                  <p className="text-sm font-bold text-blue-800">• {data.totalInWords}</p>
+                </div>
               </div>
-              <div className="flex justify-between text-sm font-bold border-t pt-2 border-[#24445C] text-black">
-                <p>• {data.totalInWords}</p>
+
+              {/* Bloc droit */}
+              <div className="w-80 bg-gray-50 rounded border border-blue-800 p-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Sous-total HT:</span>
+                    <span className="font-medium">{data.subtotal.toFixed(2)} MAD</span>
+                  </div>
+                  
+                  {/* TVA détaillée */}
+                  {(() => {
+                    const vatGroups = data.items.reduce(
+                      (acc: Record<number, { amount: number; products: string[] }>, item) => {
+                        const vatAmount = (item.unitPrice * item.quantity * item.vatRate) / 100;
+                        if (!acc[item.vatRate]) {
+                          acc[item.vatRate] = { amount: 0, products: [] };
+                        }
+                        acc[item.vatRate].amount += vatAmount;
+                        acc[item.vatRate].products.push(item.description);
+                        return acc;
+                      },
+                      {}
+                    );
+
+                    return Object.keys(vatGroups).map((rate) => (
+                      <div key={rate} className="flex justify-between text-sm">
+                        <span>TVA {rate}%:</span>
+                        <span className="font-medium">{vatGroups[+rate].amount.toFixed(2)} MAD</span>
+                      </div>
+                    ));
+                  })()}
+                  
+                  <div className="flex justify-between text-sm font-bold border-t border-blue-800 pt-2">
+                    <span>TOTAL TTC:</span>
+                    <span className="text-blue-800">{data.totalTTC.toFixed(2)} MAD</span>
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
 
-            <div className="w-80 bg-gray-50 rounded border border-[#24445C] p-4">
-              <div className="flex justify-between mb-2">
-                <span>Total HT :</span>
-                <span className="font-medium">{data.subtotal.toFixed(2)} MAD</span>
-              </div>
-              <div className="text-sm mb-2">
-                {(() => {
-                  const vatGroups = data.items.reduce(
-                    (acc: Record<number, { amount: number; products: string[] }>, item) => {
-                      const vatAmount = (item.unitPrice * item.quantity * item.vatRate) / 100;
-                      if (!acc[item.vatRate]) {
-                        acc[item.vatRate] = { amount: 0, products: [] };
-                      }
-                      acc[item.vatRate].amount += vatAmount;
-                      acc[item.vatRate].products.push(item.description);
-                      return acc;
-                    },
-                    {}
-                  );
-
-                  const vatRates = Object.keys(vatGroups);
-
-                  return vatRates.map((rate) => (
-                    <div key={rate} className="flex justify-between">
-                      <span>
-                        TVA : {rate}%{' '}
-                        {vatRates.length > 1 && (
-                          <span style={{ fontSize: '10px', color: '#555' }}>
-                            ({vatGroups[+rate].products.join(', ')})
-                          </span>
-                        )}
-                      </span>
-                      <span className="font-medium">{vatGroups[+rate].amount.toFixed(2)} MAD</span>
-                    </div>
-                  ));
-                })()}
-              </div>
-              <div className="flex justify-between text-sm font-bold border-t pt-2 border-[#24445C] text-black">
-                <span>TOTAL TTC :</span>
-                <span>{data.totalTTC.toFixed(2)} MAD</span>
+          {/* SIGNATURE - Éviter la coupure */}
+          <div className="pdf-signature p-6">
+            <div className="flex justify-start">
+              <div className="w-60 bg-gray-50 border border-blue-800 rounded p-4 text-center">
+                <div className="text-sm font-bold mb-3">Signature</div>
+                <div className="border-2 border-blue-800 rounded h-20 flex items-center justify-center">
+                  {includeSignature && user?.company?.signature ? (
+                    <img
+                      src={user.company.signature}
+                      alt="Signature"
+                      className="max-h-16 max-w-full object-contain"
+                      onError={(e) => (e.currentTarget.style.display = 'none')}
+                    />
+                  ) : (
+                    <span className="text-gray-400 text-sm"></span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-       
-        {/* SIGNATURE */}
-        <div className="p-6">
-          <div className="flex justify-start">
-            <div className="w-60 bg-gray-50 border border-black rounded p-4 text-center">
-              <div className="text-sm font-bold mb-3">Signature</div>
-              <div className="border-2 border-black rounded-sm h-20 flex items-center justify-center relative">
-                {includeSignature && user?.company?.signature ? (
-                  <img 
-                    src={user.company.signature} 
-                    alt="Signature" 
-                    className="max-h-18 max-w-full object-contain"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <span className="text-gray-400 text-sm"> </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* FOOTER (toujours en bas) */}
-        <div className="mt-auto relative bg-[#24445C] text-white">
+        {/* FOOTER - Sera répété sur chaque page en PDF */}
+        <div className="pdf-footer relative bg-blue-800 text-white">
+          {/* Vague blanche en haut - masquée en PDF */}
           <svg
-            className="absolute top-0 left-0 w-full h-10"
+            className="wave-decoration absolute top-0 left-0 w-full h-8"
             viewBox="0 0 1440 120"
             preserveAspectRatio="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -217,19 +272,21 @@ export default function Template4Corporate({ data, type, includeSignature = fals
             />
           </svg>
 
-          <div className="pt-10 p-6 text-center text-sm relative z-10">
+          <div className="p-4 text-center text-xs relative z-10">
             <p>
-              <strong>{user?.company.name}</strong> | {user?.company.address} |{' '}
-              <strong>Tél :</strong> {user?.company.phone} | <strong>ICE :</strong>{' '}
-              {user?.company.ice} | <strong>IF:</strong> {user?.company.if} |{' '}
-              <strong>RC:</strong> {user?.company.rc} | <strong>CNSS:</strong>{' '}
-              {user?.company.cnss} | <strong>Patente :</strong> {user?.company.patente} |{' '}
-              <strong>EMAIL :</strong> {user?.company.email} | <strong>SITE WEB :</strong>{' '}
-              {user?.company.website}
+              <strong>{user?.company.name}</strong> | {user?.company.address} | 
+              <strong>Tél:</strong> {user?.company.phone} | 
+              <strong>Email:</strong> {user?.company.email} | 
+              <strong>ICE:</strong> {user?.company.ice} | 
+              <strong>IF:</strong> {user?.company.if} | 
+              <strong>RC:</strong> {user?.company.rc} | 
+              <strong>CNSS:</strong> {user?.company.cnss} | 
+              <strong>Patente:</strong> {user?.company.patente} | 
+              <strong>Site:</strong> {user?.company.website}
             </p>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
