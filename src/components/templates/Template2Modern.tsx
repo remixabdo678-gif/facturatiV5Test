@@ -240,5 +240,6 @@ export default function Template2Modern({ data, type, includeSignature = false }
       </div>
       </div>
         </div>
+      </div>
   );
 }
